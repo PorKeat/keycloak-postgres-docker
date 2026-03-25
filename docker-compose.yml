@@ -1,0 +1,70 @@
+name: autonomous
+
+services:
+  db:
+    image: postgres:17.5-bullseye
+    container_name: db-kc
+    environment:
+      POSTGRES_DB: db_keycloak
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - kc_net
+    secrets:
+      - postgres_password
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3.1
+    container_name: keycloak
+    depends_on:
+      - db
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://db:5432/db_keycloak
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_ADMIN}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
+
+      KC_HOSTNAME: keycloak-a8s.cambostack.codes
+      KC_PROXY: edge
+      KC_PROXY_HEADERS: xforwarded
+      KC_HOSTNAME_STRICT: false
+      KC_HOSTNAME_STRICT_HTTPS: false
+
+      KC_HTTP_ENABLED: true 
+      
+    ports:
+      - "9090:8080"
+
+    volumes:
+      - ./keycloak/themes:/opt/keycloak/themes
+      - ./keycloak/providers:/opt/keycloak/providers
+
+    networks:
+      - kc_net
+
+    secrets:
+      - postgres_password
+      - kc_admin_user
+      - kc_admin_password
+
+    command:
+      - start
+
+volumes:
+  postgres_data:
+
+networks:
+  kc_net:
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password.txt
+  kc_admin_user:
+    file: ./secrets/kc_admin_user.txt
+  kc_admin_password:
+    file: ./secrets/kc_admin_password.txt
