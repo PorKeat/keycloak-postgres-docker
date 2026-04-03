@@ -37,3 +37,93 @@ docker compose up -d
 ```
 https://keycloak-a8s.cambostack.codes
 ```
+
+Here’s the **short + clean version** 👇
+
+---
+
+# Keycloak Theme Install (v26.3.1)
+
+## 1. Build Theme (Local)
+
+```bash
+yarn build-keycloak-theme
+```
+
+Output:
+
+```text
+dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar
+```
+
+---
+
+## 2. Copy to Server
+
+```bash
+scp dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar \
+alexkgm2412@YOUR_SERVER_IP:/home/alexkgm2412/
+```
+
+---
+
+## 3. Copy to Container
+
+```bash
+ssh alexkgm2412@YOUR_SERVER_IP
+
+docker cp /home/alexkgm2412/keycloak-theme-for-kc-all-other-versions.jar \
+keycloak:/opt/keycloak/providers/
+```
+
+---
+
+## 4. Build & Restart
+
+```bash
+docker exec keycloak /opt/keycloak/bin/kc.sh build
+docker restart keycloak
+```
+
+---
+
+## 5. Enable Theme
+
+```text
+Realm Settings → Themes → Login Theme → keycloakify-starter
+```
+
+---
+
+## Important
+
+* Use: `/opt/keycloak/providers`
+* Do NOT use: `/themes`
+* `.jar` = provider, not a theme folder
+
+---
+
+# (Optional) Persistent Setup
+
+```bash
+mkdir -p keycloak/providers
+cp keycloak-theme.jar keycloak/providers/
+```
+
+```yaml
+volumes:
+  - ./keycloak/providers:/opt/keycloak/providers
+```
+
+```bash
+docker compose exec keycloak /opt/keycloak/bin/kc.sh build
+docker compose restart keycloak
+```
+
+---
+
+# Flow
+
+```text
+Local → Server → Container → Build → Restart → Enable
+```

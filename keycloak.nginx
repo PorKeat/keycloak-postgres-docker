@@ -1,62 +1,31 @@
 server {
-    server_name keycloak-a8s.cambostack.codes;
-
-    # redirect HTTP → HTTPS (after certbot setup)
-    # return 301 https://$host$request_uri;
+    server_name keycloak-a8s.cambostack.app;
 
     location / {
         proxy_pass http://localhost:9090;
 
-        # 🔑 headers (VERY IMPORTANT for Keycloak)
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header X-Forwarded-Port $server_port;
 
-        # 🔥 buffer tuning (Keycloak JWT / cookies)
-        proxy_buffer_size 128k;
-        proxy_buffers 8 256k;
-        proxy_busy_buffers_size 256k;
-
-        # request handling
-        proxy_request_buffering off;
-
-        # timeouts
-        proxy_connect_timeout 60s;
-        proxy_send_timeout 60s;
-        proxy_read_timeout 60s;
-
-        # 🔄 WebSocket support (important for admin UI)
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
 
-        # 🔐 prevent header issues
-        proxy_headers_hash_max_size 512;
-        proxy_headers_hash_bucket_size 64;
+        proxy_buffer_size 128k;
+        proxy_buffers 8 256k;
+        proxy_busy_buffers_size 256k;
     }
 
-    # 🚫 block hidden files (.env, .git, etc)
-    location ~ /\.(?!well-known).* {
-        deny all;
-    }
-
-    listen 443 ssl; # managed by Certbot
-    ssl_certificate /etc/letsencrypt/live/keycloak-a8s.cambostack.codes/fullchain.pem; # managed by Certbot
-    ssl_certificate_key /etc/letsencrypt/live/keycloak-a8s.cambostack.codes/privkey.pem; # managed by Certbot
-    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
-
+    listen 443 ssl;
+    ssl_certificate /etc/letsencrypt/live/keycloak-a8s.cambostack.app/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/keycloak-a8s.cambostack.app/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
 }
+
 server {
-    if ($host = keycloak-a8s.cambostack.codes) {
-        return 301 https://$host$request_uri;
-    } # managed by Certbot
-
-
     listen 80;
-    server_name keycloak-a8s.cambostack.codes;
-    return 404; # managed by Certbot
+    server_name keycloak-a8s.cambostack.app;
+    return 301 https://$host$request_uri;
 }
